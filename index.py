@@ -73,7 +73,7 @@ def main():
 	winning_board = None
 	
 	while winning_board == None:
-		scores = input('Report %s\'s scores ... ' % current_board['player_name'])
+		scores = input('Record %s\'s scores ... ' % current_board['player_name'])
 		scores = [int(s) for s in re.split(r'\s+', scores.strip())]
 		record_scores(current_board, *scores)
 		
