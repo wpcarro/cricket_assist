@@ -3,7 +3,7 @@ import re
 
 def init_board(player_name):
 	# 14 will be a bullseye
-	b = dict((k, 0) for k in range(20, 13, -1))
+    b = dict((k, 0) for k in range(20, 13, -1))
 	b['player_name'] = player_name
 	
 	return b
