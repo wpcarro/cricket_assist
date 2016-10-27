@@ -1,3 +1,5 @@
+import re
+
 # Cricket Game
 
 def init_board(player_name):
@@ -6,6 +8,8 @@ def init_board(player_name):
 	b['player_name'] = player_name
 	
 	return b
+	
+# bullseye 43 err
 
 def create_game(player_name_1, player_name_2):
 	score_1 = init_board(player_name_1)
@@ -14,8 +18,8 @@ def create_game(player_name_1, player_name_2):
 	return (score_1, score_2)
 
 
-def record_scores(board, a, b, c):
-	for s in [a, b, c]:
+def record_scores(board, *scores):
+	for s in scores:
 		try:
 			board[s] += 1
 		except KeyError as ke:
@@ -72,7 +76,7 @@ def main():
 	
 	while winning_board == None:
 		scores = input('Report %s\'s scores ... ' % current_board['player_name'])
-		scores = [int(s) for s in scores.split(' ')]
+		scores = [int(s) for s in re.split(r'\s+', scores.strip())]
 		record_scores(current_board, *scores)
 		
 		if is_first_player:
@@ -86,3 +90,4 @@ def main():
 		current_board, previous_board = previous_board, current_board
 		
 	print('%s wins!' % winning_board['player_name'])
+		
