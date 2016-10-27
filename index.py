@@ -1,6 +1,5 @@
 import re
 
-# Cricket Game
 
 def init_board(player_name):
 	# 14 will be a bullseye
@@ -9,7 +8,6 @@ def init_board(player_name):
 	
 	return b
 	
-# bullseye 43 err
 
 def create_game(player_name_1, player_name_2):
 	score_1 = init_board(player_name_1)
