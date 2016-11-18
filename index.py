@@ -1,4 +1,8 @@
 import re, sys
+from itertools import cycle
+
+
+DEBUG = False
 
 
 def init_board(player_name):
@@ -10,11 +14,15 @@ def init_board(player_name):
     return b
 
 
-def create_game(player_name_1, player_name_2):
+def create_game(player_name_1, player_name_2, is_three_player=False):
     score_1 = init_board(player_name_1)
     score_2 = init_board(player_name_2)
 
     return (score_1, score_2)
+
+
+def create_n_games(player_names):
+    return [init_board(pn) for pn in player_names]
 
 
 def record_scores(board, *scores):
@@ -22,7 +30,8 @@ def record_scores(board, *scores):
         try:
             board[s] += 1
         except KeyError as ke:
-            print('%d is not a score in cricket...' % s)
+            if DEBUG:
+                print('%d is not a score in cricket...' % s)
 
 
 def is_winning_board(board):
@@ -48,7 +57,30 @@ def num_to_symbol(num):
     return num if num != 50 else 'BE'
 
 
+def print_board(board):
+    print(board['player_name'])
+
+    for (k, v) in board.items():
+        if k == 'player_name':
+            continue
+        v = clamp(0, 3, v)
+        print('{num}      {s} '.format(
+            num=num_to_symbol(k),
+            s=score_to_symbol(v)
+        ))
+
+    print('----------\n')
+
+
 def print_game(board_1, board_2):
+    if DEBUG:
+        print('-- DEBUG --')
+        print('board_1')
+        print(board_1)
+
+        print('board_2')
+        print(board_2)
+        print()
 
     print('-- Current Game --')
 
@@ -77,56 +109,116 @@ def expand_shorthand(multiplier, score):
     return ' '.join([score for x in range(int(multiplier))])
 
 
+def convert_score(score):
+    alt_score_formats = {
+        'b': '50',
+        'be': '50'
+    }
+
+    try:
+        score = alt_score_formats[score]
+    except KeyError as ke:
+        score = score
+
+    return score
+
+
 def process_input(score_string):
     results = []
-    regex = re.compile(r'(\d+)[xX](\d{1,2})')
+    regex = re.compile(r'(\d+)x(\d{1,2}|be)')
 
-    for s in score_string.split(' '):
+    for s in re.split(r'\s+', score_string.lower()):
         try:
             multiplier, score = regex.match(s).groups()
+            score = convert_score(score)
             score = expand_shorthand(multiplier, score)
         except AttributeError as ae:
-            score = s
+            score = convert_score(s)
 
         results.append(score)
 
-    return map(lambda x: int(x), ' '.join(results).split(' '))
+    return [int(x) for x in ' '.join(results).split(' ')]
+
+
+def prompt_debug():
+    result = input('DEBUG (y/N)? ').lower()
+    DEBUG = re.compile(r'y(?:es)?').match(result) != None
+
+
+def prompt_num_players():
+    result = input('Number of players: ')
+    return int(result)
+
+
+def prompt_and_record_scores(current_board):
+    keep_asking = True
+
+    while keep_asking:
+        try:
+            scores_string = input('Report %s\'s scores ... ' % current_board['player_name'])
+            scores = process_input(scores_string)
+            test_board = current_board.copy()
+            test_scores = scores.copy()
+            # Attempt to record the scores on a test board
+            record_scores(test_board, *scores)
+            keep_asking = False
+        except ValueError:
+            print('Invalid input: %s' % scores_string)
+            pass
+
+    record_scores(current_board, *scores)
+
+
+def run_n_players(player_count):
+    player_names = []
+
+    if not DEBUG:
+        player_names = [input('Enter a name for player: ') for player in range(player_count)]
+    else:
+        player_names = ['player %d' % x for x in range(player_count)]
+
+    if DEBUG:
+        print('player_names: %s' % player_names)
+
+    boards = create_n_games(player_names)
+    player_index_cycle = cycle(range(player_count))
+    winning_board = None
+
+    should_continue = True
+
+    while should_continue:
+        current_player_index = next(player_index_cycle)
+        current_board = boards[current_player_index]
+
+        prompt_and_record_scores(current_board)
+
+        is_last_player = current_player_index + 1 == player_count
+
+        if is_last_player:
+            print_boards(boards)
+
+        if not winning_board:
+            winning_board = current_board if is_winning_board(current_board) else None
+
+        should_continue = not (winning_board and is_last_player)
+
+    print('%s wins!' % winning_board['player_name'])
+    print('-- Winning Board --')
+    print_board(winning_board)
+
+    return 0
+
+
+def print_boards(boards):
+    for board in boards:
+        print_board(board)
 
 
 def run():
-    """
-    player_name_1 = input('Enter name for player 1: ')
-    player_name_2 = input('Enter name for player 2: ')
+    prompt_debug()
 
-    score_1, score_2 = create_game('Magnus', 'William')
-    """
-
-    score_1, score_2 = create_game('Magnus', 'William')
-
-    is_first_player = True
-
-    current_board = score_1
-    previous_board = score_2
-
-    winning_board = None
-
-    while winning_board == None:
-        scores = input('Report %s\'s scores ... ' % current_board['player_name'])
-        scores = process_input(scores)
-        record_scores(current_board, *scores)
-
-        if is_first_player:
-            print_game(current_board, previous_board)
-        else:
-            print_game(previous_board, current_board)
-
-        winning_board = current_board if is_winning_board(current_board) else None
-
-        is_first_player = not is_first_player
-        current_board, previous_board = previous_board, current_board
-
-    print('%s wins!' % winning_board['player_name'])
-    return 0
+    n = prompt_num_players()
+    return run_n_players(n)
 
 
 if __name__ == '__main__':
