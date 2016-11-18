@@ -210,8 +210,29 @@ def run_n_players(player_count):
 
 
 def print_boards(boards):
-    for board in boards:
-        print_board(board)
+    player_initials = [board.get('player_name')[0].upper() for board in boards]
+
+    initials_string = '  '
+    board_format_string = '{num}'
+
+    for i in range(len(boards)):
+        initials_string += '    ' + player_initials[i]
+        board_format_string += '    {' + str(i) + '}'
+
+    combined_boards = {}
+
+    for k in boards[0].keys():
+        if k == 'player_name':
+            continue
+
+        combined_boards[k] = [score_to_symbol(clamp(0, 3, board[k])) for board in boards]
+
+    print(initials_string)
+    for (num, scores) in combined_boards.items():
+        print(board_format_string.format(*scores, num=num_to_symbol(num)))
+
+    # TODO: make the number of '-' dynamically generated.
+    print('------------------\n')
 
 
 def run():
